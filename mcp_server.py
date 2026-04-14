@@ -16,11 +16,14 @@ from core.sanitizer import sanitize_memory
 
 mcp = FastMCP("hivemind")
 
-# Auto-provision on startup (best-effort)
-try:
-    cloud_client.get_client().ensure_provisioned()
-except Exception:
-    pass
+# Verify configuration on startup
+import config as _config
+if _config.get_mode() == "cloud" and not cloud_client.get_client().api_key:
+    print("ERROR: Cloud mode but no API key configured. Run 'bash setup.sh' or:", file=sys.stderr)
+    print("  python3 cli.py auth set-key YOUR_API_KEY", file=sys.stderr)
+elif _config.get_mode() == "local":
+    # Initialize local database
+    cloud_client.get_client()
 
 
 def _client():

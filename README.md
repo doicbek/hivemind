@@ -5,7 +5,7 @@
 <h1 align="center">Hivemind</h1>
 
 <p align="center">
-  <strong>A cloud-backed knowledge graph plugin for Claude Code.</strong><br>
+  <strong>A knowledge graph plugin for Claude Code.</strong><br>
   Capture problem-solving patterns. Search past solutions. Share knowledge globally.
 </p>
 
@@ -30,23 +30,41 @@ Hivemind **captures, indexes, and resurfaces** that knowledge automatically:
 - **Graph-Powered Search** — Find related memories through shared entities, even when keywords don't match
 - **Synthesis Pages** — Aggregate knowledge across memories into living wiki pages that compound over time
 - **Global Knowledge Graph** — Anonymized, community-shared patterns. Learn from how others solved similar problems
-- **Zero Setup** — Auto-provisions on first use. No registration, no API keys, no CLI commands
+- **Works Locally or in the Cloud** — Run with a local SQLite database (no account needed) or connect to the cloud for sync and the web dashboard
 
 ## Install
 
 ```bash
-git clone https://github.com/doicbek/hivemind.git ~/.hivemind/repo
-bash ~/.hivemind/repo/setup.sh
+git clone https://github.com/doicbek/hivemind.git ~/hivemind
+cd ~/hivemind && bash setup.sh
 ```
 
-Done. Start a new Claude Code session and Hivemind is active. The setup script:
+The setup script will:
 
-1. Installs Python dependencies (`httpx`, `mcp`)
-2. Registers the MCP server globally via `claude mcp add`
-3. Installs `/hive`, `/hive-myelinate`, `/hive-prune` skills
-4. Adds memory-augmented guidance to `~/.claude/CLAUDE.md`
+1. Ask for an API key (optional — press Enter to skip for local-only mode)
+2. Install Python dependencies (`httpx`, `mcp`)
+3. Register the MCP server globally via `claude mcp add`
+4. Install `/hive`, `/hive-myelinate`, `/hive-prune` skills
+5. Add memory-augmented guidance to `~/.claude/CLAUDE.md`
 
-Your account is auto-provisioned on first use — no registration required.
+### Local vs Cloud Mode
+
+| | Local Mode | Cloud Mode |
+|---|---|---|
+| **Setup** | No account needed | API key from [web dashboard](https://hivemind-nine.vercel.app) |
+| **Storage** | SQLite at `~/.hivemind/hivemind.db` | Cloud Neo4j |
+| **Search** | FTS5 full-text search | Full-text + graph expansion |
+| **Web dashboard** | Not available | Personal graph visualization |
+| **Global graph** | Not available | Community knowledge sharing |
+| **Upgrade** | `python3 cli.py claim YOUR_KEY` | Already connected |
+
+Start local, connect to the cloud when you're ready:
+
+```bash
+python3 ~/hivemind/cli.py claim YOUR_API_KEY
+```
+
+This uploads all your local memories to the cloud and switches to cloud mode. Your local database is preserved as a backup.
 
 ## How It Works
 
@@ -54,11 +72,10 @@ Your account is auto-provisioned on first use — no registration required.
 Claude Code Session
     |
     v
-MCP Server (18 tools)                    Cloud
-    |                                      |
-    |--- search_memories -----> cloud API ---> Neo4j
-    |--- store_memory --------> cloud API ---> Neo4j + auto-sync to Global Graph
-    |--- get_memories_for_task -> cloud API ---> Full-text + entity graph expansion
+MCP Server (18 tools)
+    |
+    |--- Local mode ---> SQLite (FTS5 search, entity extraction)
+    |--- Cloud mode ---> Cloud API ---> Neo4j + auto-sync to Global Graph
     |
     v
 Smarter sessions, fewer re-discoveries
@@ -70,7 +87,7 @@ Smarter sessions, fewer re-discoveries
 2. **During the session**, Claude can search for specific errors or techniques (`search_memories`, `search_with_expansion`)
 3. **After the session**, run `/hive` to extract and store valuable patterns
 4. **Over time**, run `/hive-myelinate` to synthesize knowledge into wiki pages
-5. **Every stored memory** is automatically synced to the global knowledge graph (privacy-sanitized)
+5. **In cloud mode**, every stored memory is automatically synced to the global knowledge graph (privacy-sanitized)
 
 ### Entity Extraction
 
@@ -93,7 +110,7 @@ Available in every Claude Code session:
 
 | Tool | Description |
 |------|-------------|
-| `store_memory` | Store a problem-solving pattern (auto-syncs to global) |
+| `store_memory` | Store a problem-solving pattern |
 | `search_memories` | Full-text search across all your memories |
 | `search_with_expansion` | Search + graph-based entity expansion |
 | `get_memories_for_task` | Find memories relevant to a task (returns full workflows) |
@@ -108,9 +125,9 @@ Available in every Claude Code session:
 | `promote_query` | Promote a search result to a synthesis |
 | `lint_graph` | Run graph health checks |
 | `view_log` | Browse activity log |
-| `sync_to_global` | Manual sync to global graph |
-| `search_global` | Search the community knowledge graph |
-| `browse_global` | Browse global categories |
+| `sync_to_global` | Manual sync to global graph (cloud mode) |
+| `search_global` | Search the community knowledge graph (cloud mode) |
+| `browse_global` | Browse global categories (cloud mode) |
 
 ## Skills
 
@@ -122,7 +139,7 @@ Available in every Claude Code session:
 
 ## Privacy
 
-When memories sync to the global knowledge graph, a client-side sanitizer automatically:
+When memories sync to the global knowledge graph (cloud mode), a client-side sanitizer automatically:
 
 - Replaces file paths (`/home/user/repos/acme/src/auth.py` -> `[path]/auth.py`)
 - Replaces repository URLs (`github.com/org/repo` -> `[private-repo]`)
@@ -134,51 +151,51 @@ Your code stays private. Only the problem-solving *patterns* are shared.
 Preview what sanitization looks like:
 
 ```bash
-python3 ~/.hivemind/repo/cli.py sync --dry-run
+python3 ~/hivemind/cli.py sync --dry-run
 ```
 
 ## Web Dashboard
 
-Claim your auto-provisioned account on the [Hivemind web dashboard](https://hivemind-nine.vercel.app) to access:
+Create an account on the [Hivemind web dashboard](https://hivemind-nine.vercel.app) to access:
 
 - **Personal Graph** — Force-directed visualization of your knowledge graph
 - **Global Graph** — Browse the community's anonymized knowledge
 - **Search** — Full-text search with graph expansion highlighting
-- **API Keys** — Manage API keys for multiple machines
-
-Claiming is optional — the plugin works fully without it.
+- **API Keys** — Create API keys to connect the CLI plugin
 
 ## CLI Reference
 
 The CLI is available for power users but never required:
 
 ```bash
-python3 ~/.hivemind/repo/cli.py search "import error"          # Full-text search
-python3 ~/.hivemind/repo/cli.py search-expanded "import error"  # Search + expansion
-python3 ~/.hivemind/repo/cli.py categories                      # List category tree
-python3 ~/.hivemind/repo/cli.py global search "query"           # Search global graph
-python3 ~/.hivemind/repo/cli.py global stats                    # Global statistics
-python3 ~/.hivemind/repo/cli.py auth status                     # Check connection
-python3 ~/.hivemind/repo/cli.py lint                            # Graph health check
+python3 ~/hivemind/cli.py search "import error"          # Full-text search
+python3 ~/hivemind/cli.py search-expanded "import error"  # Search + expansion
+python3 ~/hivemind/cli.py categories                      # List category tree
+python3 ~/hivemind/cli.py claim YOUR_API_KEY              # Connect local DB to cloud
+python3 ~/hivemind/cli.py global search "query"           # Search global graph
+python3 ~/hivemind/cli.py global stats                    # Global statistics
+python3 ~/hivemind/cli.py auth status                     # Check connection
+python3 ~/hivemind/cli.py lint                            # Graph health check
 ```
 
 ## Architecture
 
 ```
-User's Machine                          Cloud
-─────────────                          ─────
+User's Machine                          Cloud (optional)
+─────────────                          ────────────────
 
 Claude Code                            Hivemind Cloud
-    │                                  ├── FastAPI backend
+    |                                  ├── FastAPI backend
     v                                  ├── Neo4j knowledge graph
 MCP Server (18 tools)                  ├── User-scoped data
-    │                                  ├── Global graph (sanitized)
+    |                                  ├── Global graph (sanitized)
     v                                  └── Web dashboard
+local_client.py (SQLite)
+    -- or --
 cloud_client.py ──── HTTPS ──────────>
-    (auto-provisioned API key)
 ```
 
-No local database. No manual configuration. All data lives in the cloud, scoped by user.
+In local mode, everything runs on your machine with SQLite. In cloud mode, data syncs to Neo4j with the web dashboard and global graph.
 
 ## License
 

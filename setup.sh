@@ -8,13 +8,42 @@ CLAUDE_MD="$HOME/.claude/CLAUDE.md"
 
 echo "=== Hivemind Setup ==="
 
-# ── 1. Install Python dependencies ──────────────────────────────────
+# ── 1. API Key (optional) ──────────────────────────────────────────
+echo ""
+echo "Enter your Hivemind API key to sync with the cloud."
+echo "Create one at: https://hivemind-nine.vercel.app → API Keys"
+echo "Or press Enter to run in local-only mode (no account needed)."
+echo ""
+read -rp "API key (Enter to skip): " API_KEY
+
+mkdir -p "$HOME/.hivemind"
+if [ -z "$API_KEY" ]; then
+    cat > "$HOME/.hivemind/config.json" <<EOF
+{
+  "mode": "local",
+  "cloud_url": "https://hivemind-nine.vercel.app"
+}
+EOF
+    echo "Running in local mode. Data stored in ~/.hivemind/hivemind.db"
+    echo "Connect to the cloud later with: python3 cli.py claim YOUR_API_KEY"
+else
+    cat > "$HOME/.hivemind/config.json" <<EOF
+{
+  "mode": "cloud",
+  "api_key": "$API_KEY",
+  "cloud_url": "https://hivemind-nine.vercel.app"
+}
+EOF
+    echo "API key saved — running in cloud mode."
+fi
+
+# ── 2. Install Python dependencies ──────────────────────────────────
 echo "Installing Python dependencies..."
 pip3 install -q httpx mcp 2>/dev/null || pip install -q httpx mcp 2>/dev/null || {
     echo "WARNING: Could not install Python packages. Please run: pip3 install httpx mcp"
 }
 
-# ── 2. Register MCP server with Claude Code ─────────────────────────
+# ── 3. Register MCP server with Claude Code ─────────────────────────
 echo "Registering Hivemind MCP server..."
 if command -v claude &>/dev/null; then
     # Remove old registration if present, then add fresh
@@ -26,7 +55,7 @@ else
     echo "  claude mcp add hivemind -s user -- python3 $SCRIPT_DIR/mcp_server.py"
 fi
 
-# ── 3. Install skills ───────────────────────────────────────────────
+# ── 4. Install skills ───────────────────────────────────────────────
 SKILLS_DIR="$HOME/.claude/skills"
 mkdir -p "$SKILLS_DIR"
 for skill in hive hive-myelinate hive-prune; do
@@ -37,7 +66,7 @@ for skill in hive hive-myelinate hive-prune; do
 done
 echo "Skills installed: /hive, /hive-myelinate, /hive-prune"
 
-# ── 4. Patch CLAUDE.md ──────────────────────────────────────────────
+# ── 5. Patch CLAUDE.md ──────────────────────────────────────────────
 HIVEMIND_MARKER="get_memories_for_task"
 HIVEMIND_BLOCK='# Hivemind — Memory-Augmented Sessions
 
@@ -62,8 +91,4 @@ fi
 echo ""
 echo "=== Setup complete ==="
 echo ""
-echo "Hivemind will auto-provision your account on first use."
-echo "Just start a new Claude Code session — no further setup needed."
-echo ""
-echo "Optional: visit the Hivemind web dashboard to claim your account"
-echo "and access graph visualization."
+echo "Start a new Claude Code session — Hivemind will connect automatically."

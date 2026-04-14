@@ -68,10 +68,7 @@ class HivemindClient:
     def _request(self, method: str, path: str, **kwargs) -> dict:
         """Make an HTTP request and return the JSON response."""
         if not self.api_key:
-            try:
-                self.auto_provision()
-            except Exception:
-                return {"error": "No API key and auto-provision failed. Is the Hivemind cloud reachable?"}
+            return {"error": "No API key configured. Run 'bash setup.sh' or: python3 cli.py auth set-key YOUR_API_KEY"}
         client = self._get_client()
         resp = client.request(method, path, **kwargs)
         resp.raise_for_status()
@@ -279,11 +276,18 @@ class HivemindClient:
 _client = None
 
 
-def get_client() -> HivemindClient:
-    """Get or create the module-level client instance."""
+def get_client():
+    """Get or create the module-level client instance.
+
+    Returns LocalClient in local mode, HivemindClient in cloud mode.
+    """
     global _client
     if _client is None:
-        _client = HivemindClient()
+        if config.get_mode() == "local":
+            from local_client import LocalClient
+            _client = LocalClient()
+        else:
+            _client = HivemindClient()
     return _client
 
 

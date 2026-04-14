@@ -51,6 +51,23 @@ def clear_api_key():
     save(cfg)
 
 
+def get_mode() -> str:
+    """Return 'local' or 'cloud'."""
+    return load().get("mode", "cloud")
+
+
+def set_mode(mode: str):
+    """Set mode to 'local' or 'cloud'."""
+    cfg = load()
+    cfg["mode"] = mode
+    save(cfg)
+
+
+def get_db_path() -> str:
+    """Return path to local SQLite database."""
+    return load().get("db_path", os.path.join(CONFIG_DIR, "hivemind.db"))
+
+
 def get_cloud_url() -> str:
     """Return cloud base URL."""
     return load().get("cloud_url", DEFAULT_CLOUD_URL)

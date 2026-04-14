@@ -354,6 +354,94 @@ def cmd_migrate(args):
     })
 
 
+# ── Claim Command ────────────────────────────────────────────────────
+
+def cmd_claim(args):
+    """Connect local database to the cloud: upload local data, switch to cloud mode."""
+    current_mode = config.get_mode()
+    if current_mode == "cloud":
+        _print_json({"error": "Already in cloud mode"})
+        return
+
+    api_key = args.key
+
+    # Validate the API key
+    test_client = cloud_client.HivemindClient(api_key=api_key)
+    try:
+        status = test_client.auth_status()
+        if "error" in status:
+            _print_json({"error": f"Invalid API key: {status['error']}"})
+            return
+    except Exception as e:
+        _print_json({"error": f"Could not connect to cloud: {e}"})
+        return
+
+    print("API key valid. Uploading local data...", file=sys.stderr)
+
+    # Read all local data
+    from local_client import LocalClient
+    local = LocalClient()
+    conn = local._get_conn()
+
+    memories = conn.execute("SELECT * FROM memories ORDER BY created_at").fetchall()
+    syntheses = conn.execute("SELECT * FROM syntheses ORDER BY created_at").fetchall()
+
+    # Upload memories
+    uploaded_memories = 0
+    id_map = {}
+    for mem in memories:
+        try:
+            new_id = test_client.store_memory(
+                title=mem["title"], summary=mem["summary"],
+                workflow=mem["workflow"],
+                tools_used=json.loads(mem["tools_used"]),
+                categories=json.loads(mem["categories"]),
+                project=mem["project"], session_id=mem["session_id"],
+            )
+            id_map[mem["id"]] = new_id
+            uploaded_memories += 1
+        except Exception as e:
+            print(f"  Failed to upload memory '{mem['title']}': {e}", file=sys.stderr)
+            id_map[mem["id"]] = None
+
+    # Upload syntheses
+    uploaded_syntheses = 0
+    for synth in syntheses:
+        linked = conn.execute(
+            "SELECT memory_id FROM synthesis_memories WHERE synthesis_id = ?",
+            (synth["id"],),
+        ).fetchall()
+        new_memory_ids = [id_map[r["memory_id"]] for r in linked if id_map.get(r["memory_id"])]
+        entity_rows = conn.execute(
+            "SELECT entity_key FROM synthesis_entities WHERE synthesis_id = ?",
+            (synth["id"],),
+        ).fetchall()
+        entity_keys = [r["entity_key"] for r in entity_rows]
+        try:
+            test_client.create_synthesis(
+                topic=synth["topic"], summary=synth["summary"],
+                key_findings=synth["key_findings"],
+                memory_ids=new_memory_ids, entity_keys=entity_keys,
+            )
+            uploaded_syntheses += 1
+        except Exception as e:
+            print(f"  Failed to upload synthesis '{synth['topic']}': {e}", file=sys.stderr)
+
+    # Switch to cloud mode
+    config.set_api_key(api_key)
+    config.set_mode("cloud")
+    cloud_client.close()
+    local.close()
+
+    _print_json({
+        "claimed": True,
+        "memories_uploaded": uploaded_memories,
+        "syntheses_uploaded": uploaded_syntheses,
+        "mode": "cloud",
+        "message": "Switched to cloud mode. Local database preserved at ~/.hivemind/hivemind.db",
+    })
+
+
 # ── Sync Commands ────────────────────────────────────────────────────
 
 def cmd_sync(args):
@@ -492,6 +580,10 @@ def main():
     trans_p.add_argument("session_id", help="Session ID")
     trans_p.add_argument("project_path", help="Project path")
 
+    # claim
+    claim_p = subparsers.add_parser("claim", help="Connect local database to cloud")
+    claim_p.add_argument("key", help="API key from the web dashboard")
+
     # migrate
     migrate_p = subparsers.add_parser("migrate", help="Migrate local Neo4j memories to cloud")
     migrate_p.add_argument("--dry-run", action="store_true", help="Preview what would be migrated")
@@ -558,6 +650,7 @@ def main():
         "lint": cmd_lint,
         "get": cmd_get,
         "transcript": cmd_transcript,
+        "claim": cmd_claim,
         "migrate": cmd_migrate,
         "sync": cmd_sync,
     }
