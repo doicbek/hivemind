@@ -1,8 +1,4 @@
-<p align="center">
-  <img src="assets/logo.svg" alt="Hivemind" width="120" height="120">
-</p>
-
-<h1 align="center">Hivemind</h1>
+<h1 align="center">🐝 Hivemind</h1>
 
 <p align="center">
   <strong>A cloud-backed knowledge graph plugin for Claude Code.</strong><br>
