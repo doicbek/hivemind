@@ -1,17 +1,5 @@
 <p align="center">
-  <svg viewBox="0 0 64 64" width="80" height="80" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <ellipse cx="32" cy="34" rx="14" ry="16" fill="#f0b429"/>
-    <ellipse cx="32" cy="34" rx="14" ry="16" fill="none" stroke="#1a1a2e" stroke-width="1.5"/>
-    <rect x="18" y="28" width="28" height="3" rx="1" fill="#1a1a2e"/>
-    <rect x="18" y="35" width="28" height="3" rx="1" fill="#1a1a2e"/>
-    <circle cx="32" cy="18" r="8" fill="#f0b429"/>
-    <circle cx="32" cy="18" r="8" fill="none" stroke="#1a1a2e" stroke-width="1.5"/>
-    <circle cx="28" cy="16" r="2" fill="#1a1a2e"/>
-    <circle cx="36" cy="16" r="2" fill="#1a1a2e"/>
-    <ellipse cx="17" cy="20" rx="8" ry="5" transform="rotate(-30 17 20)" fill="#f0b42966" stroke="#f0b429" stroke-width="1"/>
-    <ellipse cx="47" cy="20" rx="8" ry="5" transform="rotate(30 47 20)" fill="#f0b42966" stroke="#f0b429" stroke-width="1"/>
-    <path d="M29 50 L32 56 L35 50" stroke="#1a1a2e" stroke-width="1.5" fill="none"/>
-  </svg>
+  <img src="assets/logo.svg" alt="Hivemind" width="120" height="120">
 </p>
 
 <h1 align="center">Hivemind</h1>
