@@ -135,7 +135,7 @@ python3 ~/.hivemind/repo/cli.py sync --dry-run
 
 ## Web Dashboard
 
-Claim your auto-provisioned account on the [Hivemind web dashboard](https://hivemind.example.com) to access:
+Claim your auto-provisioned account on the [Hivemind web dashboard](https://hivemind-nine.vercel.app) to access:
 
 - **Personal Graph** — Force-directed visualization of your knowledge graph
 - **Global Graph** — Browse the community's anonymized knowledge
