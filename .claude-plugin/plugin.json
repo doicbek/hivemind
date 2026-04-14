@@ -1,0 +1,12 @@
+{
+  "name": "hivemind",
+  "version": "2.0.0",
+  "description": "Cloud-backed knowledge graph for Claude Code sessions. Captures problem-solving patterns, syncs to a shared global graph, and serves memories via MCP.",
+  "author": {"name": "Dominic Beck"},
+  "repository": "https://github.com/doicbek/hivemind",
+  "license": "MIT",
+  "keywords": ["memory", "knowledge-graph", "session", "patterns", "mcp", "cloud"],
+  "skills": "./skills",
+  "mcpServers": "./.mcp.json",
+  "setup": "./setup.sh"
+}
